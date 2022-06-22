@@ -12,6 +12,13 @@ const TOTAL_MINT_COUNT = 50;
 const App = () => {
   const [currentAccount, setCurrentAccount] = useState("");
 
+  // if upload file
+  const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+
+
   const checkIfWalletIsConnected = async () => {
     const { ethereum } = window;
 
@@ -39,7 +46,6 @@ const App = () => {
   const connectWallet = async () => {
     try {
       const { ethereum } = window;
-
       if (!ethereum) {
         alert("Get MetaMask!");
         return;
@@ -85,17 +91,45 @@ const askContractToMintNft = async () => {
     console.log(error)
   }
 }
-  // Render Methods
-  const renderNotConnectedContainer = () => (
-    <button onClick={connectWallet} className="cta-button connect-wallet-button">
-      Connect to Wallet
-    </button>
-  );
+ 
 
   useEffect(() => {
     checkIfWalletIsConnected();
   }, [])
 
+  // post file to 
+const postFile= ()=>{
+  setLoading(true);
+  useEffect(()=>{
+    fetch(OPENSEA_LINK, {
+       method: 'POST',
+       headers: {
+         'Content-Type': 'application/json',
+       },
+       body: JSON.stringify({
+         file: file
+       })
+     }).then(res => res.json())
+     .then(data => 
+        {
+          setLoading(false);
+          setSuccess(true);
+          setError(data.error);
+        }
+      ) // Successful upload use success state to show success message
+     .catch(err => console.log(err)) // Error
+   }
+   ,[])
+ 
+  console.log(file)
+}
+console.log(loading)
+
+const UploadIcon = () => {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M9 17v-6l-2 2M9 11l2 2" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M22 10v5c0 5-2 7-7 7H9c-5 0-7-2-7-7V9c0-5 2-7 7-7h5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M22 10h-4c-3 0-4-1-4-4V2l8 8Z" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+  )
+}
   /*
   * Added a conditional render! We don't want to show Connect to Wallet if we're already connected :).
   */
@@ -107,13 +141,28 @@ const askContractToMintNft = async () => {
           <p className="sub-text">
             We are a creative project development studio focused on blockchain technology!
           </p>
-          {currentAccount === "" ? (
-            renderNotConnectedContainer()
+          {success?
+          <div>
+            <p className="sub-text">Success!</p>
+          </div>
+          :(currentAccount === "" ? (
+            <button onClick={connectWallet} className="cta-button connect-wallet-button">
+            Connect to Wallet
+          </button>
           ) : (
-            <button onClick={null} className="cta-button connect-wallet-button">
+            <div className="upload-area">
+              <div class="upload-btn-wrapper">
+  <button class="input-btn cta-button connect-wallet-button">
+    {file ? file.name : <span className="upload-button"><p>Upload</p><UploadIcon/></span>}
+  </button>
+  <input className="upload-file" type="file" onChange={(e) => setFile(e.target.files[0])} />
+</div>
+            <button onClick={postFile} className={`cta-button ${file&&"connect-wallet-button"}`} disabled={loading||!file}
+            >
               Mint NFT
             </button>
-          )}
+            </div> 
+          ))}
         </div>
         <div className="footer-container">
           <img alt="Twitter Logo" className="twitter-logo" src={twitterLogo} />
